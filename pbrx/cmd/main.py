@@ -24,6 +24,7 @@ try:
 except ImportError:
     yaml = None
 
+from pbrx import containers
 from pbrx import siblings
 import pbr.version
 
@@ -95,6 +96,14 @@ def main():
     )
     cmd_siblings.add_argument(
         "projects", nargs="*", help="List of project src dirs to process"
+    )
+
+    cmd_containers = subparsers.add_parser(
+        "build-containers", help="build per-process container images"
+    )
+    cmd_containers.set_defaults(func=containers.build)
+    cmd_containers.add_argument(
+        "--prefix", help="Organization prefix containers will be published to"
     )
 
     args = parser.parse_args()
