@@ -24,6 +24,7 @@ try:
 except ImportError:
     yaml = None
 
+from pbrx import siblings
 import pbr.version
 
 log = logging.getLogger("pbrx")
@@ -80,6 +81,20 @@ def main():
 
     subparsers = parser.add_subparsers(
         title="commands", description="valid commands", help="additional help"
+    )
+
+    cmd_siblings = subparsers.add_parser(
+        "install-siblings", help="install sibling packages"
+    )
+    cmd_siblings.set_defaults(func=siblings.main)
+    cmd_siblings.add_argument(
+        "-c,--constraints",
+        dest="constraints",
+        help="Path to constraints file",
+        required=False,
+    )
+    cmd_siblings.add_argument(
+        "projects", nargs="*", help="List of project src dirs to process"
     )
 
     args = parser.parse_args()

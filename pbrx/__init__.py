@@ -15,4 +15,4 @@
 import pbr.version
 
 
-__version__ = pbr.version.VersionInfo('pbrx').version_string()
+__version__ = pbr.version.VersionInfo("pbrx").version_string()

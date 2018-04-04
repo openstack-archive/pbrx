@@ -22,6 +22,14 @@ support for such actions.
 Features
 --------
 
-* TODO
+Each utility is implemented as a subcommand on the ``pbrx`` command.
+
+install-siblings
+  Updates an installation with local from-source versions of dependencies.
+  For any dependency that the normal installation installed from pip/PyPI,
+  ``install-siblings`` will look for an adjacent git repository that provides
+  the same package. If one exists, the source version will be installed to
+  replace the released version. This is done in such a way that any given
+  ``constraints`` will be honored and not get messed up by transitive depends.
 
 .. _pbr: https://docs.openstack.org/pbr/latest/

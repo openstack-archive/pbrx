@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Added ``install-siblings`` command to install relevant packages from
+    nearby git repositories.
+    some details.
