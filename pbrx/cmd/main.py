@@ -26,7 +26,7 @@ except ImportError:
 
 import pbr.version
 
-from pbrx import containers
+from pbrx import containers_images
 from pbrx import siblings
 
 log = logging.getLogger("pbrx")
@@ -99,12 +99,13 @@ def main():
         "projects", nargs="*", help="List of project src dirs to process"
     )
 
-    cmd_containers = subparsers.add_parser(
-        "build-containers", help="build per-process container images"
+    cmd_images = subparsers.add_parser(
+        "build-images", help="build per-process container images"
     )
-    cmd_containers.set_defaults(func=containers.build)
-    cmd_containers.add_argument(
-        "--prefix", help="Organization prefix containers will be published to"
+    cmd_images.set_defaults(func=container_images.build)
+    cmd_images.add_argument(
+        "--prefix",
+        help="Organization prefix container images will be published to"
     )
 
     args = parser.parse_args()
