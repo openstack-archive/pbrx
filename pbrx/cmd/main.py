@@ -99,7 +99,7 @@ def main():
     )
 
     cmd_containers = subparsers.add_parser(
-        "build-containers", help="build per-process container images"
+        "build-images", help="build per-process container images"
     )
     cmd_containers.set_defaults(func=containers.build)
     cmd_containers.add_argument(
