@@ -24,9 +24,10 @@ try:
 except ImportError:
     yaml = None
 
+import pbr.version
+
 from pbrx import containers
 from pbrx import siblings
-import pbr.version
 
 log = logging.getLogger("pbrx")
 

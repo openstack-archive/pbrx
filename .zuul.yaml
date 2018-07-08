@@ -1,0 +1,21 @@
+- project:
+    check:
+      jobs:
+        - tox-pep8
+        - tox-py27
+        - tox-py35
+        - tox-py36:
+            nodeset: ubuntu-bionic
+        - build-sphinx-docs:
+            vars:
+              sphinx_python: python3
+    gate:
+      jobs:
+        - tox-pep8
+        - tox-py27
+        - tox-py35
+        - tox-py36:
+            nodeset: ubuntu-bionic
+        - build-sphinx-docs:
+            vars:
+              sphinx_python: python3
