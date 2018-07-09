@@ -1,3 +1,27 @@
+- secret:
+    name: readthedocs_info
+    data:
+      token: !encrypted/pkcs1-oaep
+        - Al3wzr6gLCawYo5Iy3zFYwrkEVw46okpL2sed25yRPXAZv4NgaHFlzxXcOWVLOHdBDo5C
+          3IYE6wm7iO7QWnYjZ5CNYsFylMWl2r9xNwXj19tNkhFxLbT2iZN4at5W9mwBkeqN+mlpA
+          +Xbb5juxDcZwyEg9PpFjUNN2oGZLakV6VuCuoCbCJgXxXv1d2SH9jf4SbhyaQcu6qCOOg
+          8/byznmAzYztrhMIxICyIJxzm5kNCghtG2Yc6U/BosYsqta7TsCZJ+78JibtCGlMRdyYx
+          qjklRIiDImiJvbvgYeNAwkx/kQy4DHyYgCV2dc6/dOjFK8vbNSJCWFrHu8dW7RJjnfWKU
+          tt9Rivl3ntWQ4aAEmOGaQt2ISkWubylxMii8DWfE3rYLch+whrCQ3GU0VFhaAf0gKIv6E
+          4RCIKsIwZpObZAuFqY3VYaiCwXGq9FHmFv9dJlrNVlpH/sTTIYolJkKpWsBkvp10MIF0n
+          DrLRvPMizRNRvIs7pl5nOPUurOyE/+uBX6OunY/hewykonjZPcY8u44NGjEScu5KsTvnh
+          Omi+hqauaQnBI+ZQvIhbMSVR8RgYm+cTQVdB/CF7oZFcGirAxBa5p7WSVJDqEo+/7qU4M
+          Ue4TbpM6I+FKuBleoVRNq5LDkGBLZ52ofYNLMb7wHhs7Zo23gGN5M5eiTDYJes=
+
+- job:
+    name: pbrx-trigger-readthedocs
+    description: |
+        Trigger doc build on readthedocs.org for pbrx
+    nodeset:
+    secrets:
+      - readthedocs_info
+    playbooks: playbooks/readthedocs.yaml
+
 - project:
     check:
       jobs:
@@ -19,3 +43,5 @@
         - build-sphinx-docs:
             vars:
               sphinx_python: python3
+    post:
+        - pbrx-trigger-readthedocs

@@ -1,0 +1,10 @@
+- hosts: localhost
+  tasks:
+    - name: Trigger readthedocs build URI
+      uri:
+        method: POST
+        url: 'https://readthedocs.org/api/v2/webhook/{{ zuul.project.short_name }}/42240/'
+        follow_redirects: all
+        data:
+          branches: '{{ zuul.branch }}'
+          token: '{{ readthedocs_info.token }}'
