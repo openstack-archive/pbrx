@@ -132,19 +132,19 @@ def build(args):
         packages = e.stdout.decode('utf-8').strip()
 
     try:
-        build_packages = sh.docker.run(
+        compile_packages = sh.docker.run(
             "--rm",
             "-v",
             "{pwd}:/usr/src".format(pwd=os.path.abspath(os.curdir)),
             "bindep",
             "bindep",
             "-b",
-            "build",
+            "compile",
         )
     except sh.ErrorReturnCode_1 as e:
-        build_packages = e.stdout.decode('utf-8').strip()
+        compile_packages = e.stdout.decode('utf-8').strip()
     packages = packages.replace("\r", "\n").replace("\n", " ")
-    build_packages = build_packages.replace("\r", "\n").replace("\n", " ")
+    compile_packages = compile_packages.replace("\r", "\n").replace("\n", " ")
 
     # Make place for the wheels to go
     with tempfile.TemporaryDirectory(
@@ -155,8 +155,8 @@ def build(args):
         # Make temporary container that installs all deps to build wheel
         # This container also needs git installed for pbr
         with docker_container("python-base", volumes=[tmp_volume]) as cont:
-            cont.run("apt-get install -y {build_packages} git".format(
-                build_packages=build_packages))
+            cont.run("apt-get install -y {compile_packages} git".format(
+                compile_packages=compile_packages))
             cont.run("python setup.py bdist_wheel -d /tmp/output")
             cont.run("chmod -R ugo+w /tmp/output")
 
@@ -171,8 +171,8 @@ def build(args):
         ) as cont:
             try:
                 cont.run(
-                    "apt-get install -y {packages} {build_packages}".format(
-                        build_packages=build_packages, packages=packages)
+                    "apt-get install -y {packages} {compile_packages}".format(
+                        compile_packages=compile_packages, packages=packages)
                 )
                 cont.run("pip install -r requirements.txt")
                 cont.run("pip install --no-deps /tmp/output/*whl dumb-init")
