@@ -14,10 +14,13 @@
 # limitations under the License.
 import configparser
 import contextlib
+import logging
 import os
 import tempfile
 
 import sh
+
+log = logging.getLogger("pbrx.container_images")
 
 
 class ProjectInfo(object):
@@ -75,7 +78,10 @@ class ContainerContext(object):
         return sh.docker('start', container_id).strip()
 
     def run(self, command):
-        self._cont(command)
+        log.debug("Running: %s", command)
+        output = self._cont(command)
+        log.debug(output)
+        return output
 
     def commit(self, tag, comment=None, prefix=None):
         commit_args = []
@@ -108,10 +114,12 @@ def build(args):
 
     info = ProjectInfo()
 
+    log.info("Building base python container")
     # Create base python container which has distro packages updated
     with docker_container("python:slim", tag="python-base") as cont:
         cont.run("apt-get update")
 
+    log.info("Building bindep container")
     # Create bindep container
     with docker_container("python-base", tag="bindep") as cont:
         cont.run("apt-get install -y lsb-release")
@@ -119,6 +127,7 @@ def build(args):
 
     # Use bindep container to get list of packages needed in the final
     # container. It returns 1 if there are packages that need to be installed.
+    log.info("Get list of bindep packages for run")
     try:
         packages = sh.docker.run(
             "--rm",
@@ -132,6 +141,7 @@ def build(args):
         packages = e.stdout.decode('utf-8').strip()
 
     try:
+        log.info("Get list of bindep packages for compile")
         compile_packages = sh.docker.run(
             "--rm",
             "-v",
@@ -154,6 +164,7 @@ def build(args):
 
         # Make temporary container that installs all deps to build wheel
         # This container also needs git installed for pbr
+        log.info("Build wheels in python-base container")
         with docker_container("python-base", volumes=[tmp_volume]) as cont:
             cont.run("apt-get install -y {compile_packages} git".format(
                 compile_packages=compile_packages))
@@ -162,6 +173,7 @@ def build(args):
 
         # Build the final base container. Use dumb-init as the entrypoint so
         # that signals and subprocesses work properly.
+        log.info("Build base container")
         with docker_container(
             "python-base",
             tag=info.base_container,
@@ -190,8 +202,11 @@ def build(args):
     for script in info.scripts:
         dockerfile = "Dockerfile.{script}".format(script=script)
         if os.path.exists(dockerfile):
+            log.info("Building container for {script} from Dockerfile".format(
+                script=script))
             sh.docker.build("-f", dockerfile, "-t", script, ".")
         else:
+            log.info("Building container for {script}".format(script=script))
             with docker_container(
                 info.base_container,
                 prefix=args.prefix,
