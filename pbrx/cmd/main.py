@@ -82,7 +82,8 @@ def main():
     )
 
     subparsers = parser.add_subparsers(
-        title="commands", description="valid commands", help="additional help"
+        title="commands", description="valid commands",
+        dest="command", help="additional help"
     )
 
     cmd_siblings = subparsers.add_parser(
@@ -110,9 +111,13 @@ def main():
 
     args = parser.parse_args()
     setup_logging(args.log_config, args.debug)
+
+    if not args.command:
+        parser.print_help()
+        return 1
+
     try:
         return args.func(args)
-
     except Exception as e:
         log.exception(str(e))
         return 1
