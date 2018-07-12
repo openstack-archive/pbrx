@@ -239,6 +239,7 @@ def build(args):
                     "Building container for {script}".format(script=script))
                 with docker_container(
                     info.base_container,
+                    tag=script,
                     prefix=args.prefix,
                     volumes=[tmp_volume],
                     comment='CMD ["/usr/local/bin/{script}"]'.format(
