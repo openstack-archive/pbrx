@@ -122,7 +122,10 @@ def build(args):
     log.info("Building bindep container")
     # Create bindep container
     with docker_container("python-base", tag="bindep") as cont:
-        cont.run("pip install bindep")
+        # TODO(mordred) Install from pip once bindep has a new release.
+        # Install from source for now, since apk support hasn't landed
+        cont.run("apk add git")
+        cont.run("pip install git+https://git.openstack.org/openstack-infra/bindep.git#egg=bindep")
 
     # Use bindep container to get list of packages needed in the final
     # container. It returns 1 if there are packages that need to be installed.
