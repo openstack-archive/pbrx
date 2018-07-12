@@ -53,7 +53,7 @@ class ContainerContext(object):
         self._base = base
         self._volumes = volumes or []
         self.run_id = self.create()
-        self._cont = sh.docker.bake("exec", self.run_id, "bash", "-c")
+        self._cont = sh.docker.bake("exec", self.run_id, "sh", "-c")
 
     def create(self):
         vargs = [
@@ -64,15 +64,12 @@ class ContainerContext(object):
             "{}:/usr/src".format(os.path.abspath(os.curdir)),
             "-w",
             "/usr/src",
-            "-v",
-            "{}:/root/.cache/pip/wheels".format(
-                os.path.expanduser("~/.cache/pip/wheels")),
         ]
         for vol in self._volumes:
             vargs.append("-v")
             vargs.append(vol)
         vargs.append(self._base)
-        vargs.append("bash")
+        vargs.append("sh")
 
         container_id = sh.docker(*vargs).strip()
         return sh.docker('start', container_id).strip()
@@ -102,9 +99,6 @@ def docker_container(base, tag=None, prefix=None, comment=None, volumes=None):
     container = ContainerContext(base, volumes)
     yield container
 
-    # Make sure wheels made in the container are owned by the current user
-    container.run("chown -R {uid} /root/.cache/pip/wheels".format(
-        uid=os.getuid()))
     if tag:
         container.commit(tag, prefix=prefix, comment=comment)
     sh.docker.rm("-f", container.run_id)
@@ -142,6 +136,7 @@ def build(args):
             "bindep",
             "-b",
         )
+        log.debug(packages)
     except sh.ErrorReturnCode_1 as e:
         packages = e.stdout.decode('utf-8').strip()
 
@@ -156,6 +151,7 @@ def build(args):
             "-b",
             "compile",
         )
+        log.debug(compile_packages)
     except sh.ErrorReturnCode_1 as e:
         compile_packages = e.stdout.decode('utf-8').strip()
     packages = packages.replace("\r", "\n").replace("\n", " ")
@@ -165,16 +161,36 @@ def build(args):
     with tempfile.TemporaryDirectory(
         dir=os.path.abspath(os.curdir)
     ) as tmpdir:
-        tmp_volume = "{tmpdir}:/tmp/output".format(tmpdir=tmpdir)
+        # Pass in the directory into ~/.cache/pip so that the built wheel
+        # cache will persist into the next container. The real wheel cache
+        # will go there- but we'll also put our built wheel into place there.
+        tmp_volume = "{tmpdir}:/root/.cache/pip".format(tmpdir=tmpdir)
 
         # Make temporary container that installs all deps to build wheel
         # This container also needs git installed for pbr
         log.info("Build wheels in python-base container")
         with docker_container("python-base", volumes=[tmp_volume]) as cont:
+            # Make sure wheel cache dir is owned by container user
+            cont.run("chown -R $(whoami) /root/.cache/pip")
+
+            # Add the compile dependencies
             cont.run("apk add {compile_packages} git".format(
                 compile_packages=compile_packages))
-            cont.run("python setup.py bdist_wheel -d /tmp/output")
-            cont.run("chmod -R ugo+w /tmp/output")
+
+            # Build a wheel so that we have an install target.
+            # pip install . in the container context with the mounted
+            # source dir gets ... exciting.
+            cont.run("python setup.py bdist_wheel -d /root/.cache/pip")
+
+            log.debug(cont.run("find /root/.cache/pip"))
+            log.debug(cont.run("ls -ltra /root/.cache"))
+            # Install with all container-related extras so that we populate
+            # the wheel cache as needed.
+            cont.run(
+                "pip install"
+                " $(echo /root/.cache/pip/*.whl)[{base},{scripts}]".format(
+                    base=info.base_container,
+                    scripts=','.join(info.scripts)))
 
         # Build the final base container. Use dumb-init as the entrypoint so
         # that signals and subprocesses work properly.
@@ -184,37 +200,59 @@ def build(args):
             tag=info.base_container,
             prefix=args.prefix,
             volumes=[tmp_volume],
-            comment='ENTRYPOINT ["/usr/local/bin/dumb-init", "--"]',
+            comment='ENTRYPOINT ["/usr/bin/dumb-init", "--"]',
         ) as cont:
             try:
                 cont.run(
                     "apk add {packages} dumb-init".format(packages=packages)
                 )
-                cont.run("pip install -r requirements.txt")
+                wheel_list = cont.run("ls /root/.cache/pip/*whl")
+                log.debug("Wheels: {wheel_list}".format(wheel_list=wheel_list))
+                log.debug(cont.run("find /root/.cache/pip"))
+                cont.run(
+                    "pip install"
+                    " $(echo /root/.cache/pip/*.whl)[{base}]".format(
+                        base=info.base_container))
+                # chown wheel cache back so the temp dir can delete it
+                cont.run("chown -R {uid} /root/.cache/pip".format(
+                    uid=os.getuid()))
             except Exception as e:
                 print(e.stdout)
                 raise
 
-    # Build a container for each program.
-    # In the simple-case, it's just an entrypoint commit setting CMD.
-    # If a Dockerfile exists for the program, use it instead.
-    # Such a Dockerfile should use:
-    #   FROM {{ base_container }}-base
-    # This is useful for things like zuul-executor where the full story is not
-    # possible to express otherwise.
-    for script in info.scripts:
-        dockerfile = "Dockerfile.{script}".format(script=script)
-        if os.path.exists(dockerfile):
-            log.info("Building container for {script} from Dockerfile".format(
-                script=script))
-            sh.docker.build("-f", dockerfile, "-t", script, ".")
-        else:
-            log.info("Building container for {script}".format(script=script))
-            with docker_container(
-                info.base_container,
-                prefix=args.prefix,
-                comment='CMD ["/usr/local/bin/{script}"]'.format(
-                    script=script
-                ),
-            ):
-                pass
+        # Build a container for each program.
+        # In the simple-case, it's just an entrypoint commit setting CMD.
+        # If a Dockerfile exists for the program, use it instead.
+        # Such a Dockerfile should use:
+        #   FROM {{ base_container }}-base
+        # This is useful for things like zuul-executor where the full story is
+        # not possible to express otherwise.
+        for script in info.scripts:
+            dockerfile = "Dockerfile.{script}".format(script=script)
+            if os.path.exists(dockerfile):
+                log.info(
+                    "Building container for {script} from Dockerfile".format(
+                        script=script))
+                sh.docker.build("-f", dockerfile, "-t", script, ".")
+            else:
+                log.info(
+                    "Building container for {script}".format(script=script))
+                with docker_container(
+                    info.base_container,
+                    prefix=args.prefix,
+                    volumes=[tmp_volume],
+                    comment='CMD ["/usr/local/bin/{script}"]'.format(
+                        script=script
+                    ),
+                ) as cont:
+                    cont.run(
+                        "pip install"
+                        " $(echo /root/.cache/pip/*.whl)[{script}]".format(
+                            script=script))
+
+        # chown wheel cache back so the temp dir can delete it
+        with docker_container(
+            "python-base",
+            volumes=[tmp_volume],
+        ) as cont:
+            cont.run("chown -R {uid} /root/.cache/pip".format(uid=os.getuid()))
