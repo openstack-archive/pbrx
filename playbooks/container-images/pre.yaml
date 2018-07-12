@@ -1,0 +1,11 @@
+- hosts: all
+  roles:
+
+    - install-docker
+
+- hosts: all
+  tasks:
+
+    - name: Install pbrx software
+      command: python3 -m pip install src/git.openstack.org/openstack/pbrx
+      become: yes

@@ -1,3 +1,11 @@
+- job:
+    name: pbrx-build-container-images
+    nodeset: ubuntu-bionic
+    required-projects:
+      - openstack/pbrx
+    pre-run: playbooks/container-images/pre.yaml
+    run: playbooks/container-images/run.yaml
+
 - project:
     check:
       jobs:
