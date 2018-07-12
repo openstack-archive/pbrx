@@ -116,13 +116,12 @@ def build(args):
 
     log.info("Building base python container")
     # Create base python container which has distro packages updated
-    with docker_container("python:slim", tag="python-base") as cont:
-        cont.run("apt-get update")
+    with docker_container("python:alpine", tag="python-base") as cont:
+        cont.run("apk update")
 
     log.info("Building bindep container")
     # Create bindep container
     with docker_container("python-base", tag="bindep") as cont:
-        cont.run("apt-get install -y lsb-release")
         cont.run("pip install bindep")
 
     # Use bindep container to get list of packages needed in the final
@@ -166,7 +165,7 @@ def build(args):
         # This container also needs git installed for pbr
         log.info("Build wheels in python-base container")
         with docker_container("python-base", volumes=[tmp_volume]) as cont:
-            cont.run("apt-get install -y {compile_packages} git".format(
+            cont.run("apk add {compile_packages} git".format(
                 compile_packages=compile_packages))
             cont.run("python setup.py bdist_wheel -d /tmp/output")
             cont.run("chmod -R ugo+w /tmp/output")
@@ -183,11 +182,9 @@ def build(args):
         ) as cont:
             try:
                 cont.run(
-                    "apt-get install -y {packages} {compile_packages}".format(
-                        compile_packages=compile_packages, packages=packages)
+                    "apk add {packages} dumb-init".format(packages=packages)
                 )
                 cont.run("pip install -r requirements.txt")
-                cont.run("pip install --no-deps /tmp/output/*whl dumb-init")
             except Exception as e:
                 print(e.stdout)
                 raise
