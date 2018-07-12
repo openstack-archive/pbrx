@@ -1,0 +1,8 @@
+Code-Review+2: Monty Taylor <mordred@inaugust.com>
+Workflow+1: Monty Taylor <mordred@inaugust.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Thu, 12 Jul 2018 15:58:51 +0000
+Reviewed-on: https://review.openstack.org/581865
+Project: openstack/pbrx
+Branch: refs/heads/master
