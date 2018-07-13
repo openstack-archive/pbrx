@@ -52,6 +52,14 @@ class ContainerContext(object):
     def __init__(self, base, volumes):
         self._base = base
         self._volumes = volumes or []
+        # bind-mount the pip.conf from the host so that any configured
+        # pypi mirrors will be used inside of the image builds.
+        if os.path.exists('/etc/pip.conf'):
+            self._volumes.append('/etc/pip.conf:/etc/pip.conf')
+        if os.path.exists(os.path.expanduser('~/.config/pip/pip.conf')):
+            self._volumes.append('{host}:{guest}'.format(
+                host=os.path.expanduser('~/.config/pip/pip.conf'),
+                guest='/root/.config/pip/pip.conf'))
         self.run_id = self.create()
         self._cont = sh.docker.bake("exec", self.run_id, "sh", "-c")
 
