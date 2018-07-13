@@ -12,3 +12,6 @@
       command: pbrx --debug build-images
       args:
         chdir: '{{ zuul_work_dir|default(zuul.project.src_dir) }}'
+
+    - name: Output image information
+      command: docker images
