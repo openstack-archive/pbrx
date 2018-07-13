@@ -108,6 +108,12 @@ def main():
         "--prefix",
         help="Organization prefix container images will be published to"
     )
+    cmd_images.add_argument(
+        "--mirror",
+        help=(
+            "Base url for an alpine mirror to use. Will be used to replace"
+            " http://dl-cdn.alpinelinux.org/alpine"),
+    )
 
     args = parser.parse_args()
     setup_logging(args.log_config, args.debug)
