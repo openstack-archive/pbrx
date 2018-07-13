@@ -20,6 +20,7 @@ import tempfile
 
 import sh
 
+ALPINE_MIRROR_BASE = "http://dl-cdn.alpinelinux.org/alpine"
 log = logging.getLogger("pbrx.container_images")
 
 
@@ -119,6 +120,10 @@ def build(args):
     log.info("Building base python container")
     # Create base python container which has distro packages updated
     with docker_container("python:alpine", tag="python-base") as cont:
+        if args.mirror:
+            cont.run("sed -i 's,{old},{new}' /etc/apk/repositories".format(
+                old=ALPINE_MIRROR_BASE,
+                new=args.mirror))
         cont.run("apk update")
 
     log.info("Building bindep container")
@@ -216,6 +221,11 @@ def build(args):
                     "pip install"
                     " $(echo /root/.cache/pip/*.whl)[{base}]".format(
                         base=info.base_container.replace('-', '_')))
+                if args.mirror:
+                    cont.run(
+                        "sed -i 's,{old},{new}' /etc/apk/repositories".format(
+                            old=args.mirror,
+                            new=ALPINE_MIRROR_BASE))
                 # chown wheel cache back so the temp dir can delete it
                 cont.run("chown -R {uid} /root/.cache/pip".format(
                     uid=os.getuid()))
