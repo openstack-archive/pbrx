@@ -182,8 +182,6 @@ def build(args):
             # source dir gets ... exciting.
             cont.run("python setup.py bdist_wheel -d /root/.cache/pip")
 
-            log.debug(cont.run("find /root/.cache/pip"))
-            log.debug(cont.run("ls -ltra /root/.cache"))
             # Install with all container-related extras so that we populate
             # the wheel cache as needed.
             cont.run(
@@ -206,9 +204,6 @@ def build(args):
                 cont.run(
                     "apk add {packages} dumb-init".format(packages=packages)
                 )
-                wheel_list = cont.run("ls /root/.cache/pip/*whl")
-                log.debug("Wheels: {wheel_list}".format(wheel_list=wheel_list))
-                log.debug(cont.run("find /root/.cache/pip"))
                 cont.run(
                     "pip install"
                     " $(echo /root/.cache/pip/*.whl)[{base}]".format(
