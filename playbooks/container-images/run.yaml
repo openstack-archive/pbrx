@@ -1,10 +1,7 @@
 - hosts: all
   tasks:
 
-    - name: reset ssh connection to pick up docker group
-      meta: reset_connection
-
     - name: Build zuul container images
       command: pbrx --debug build-images
       args:
-        chdir: src/git.openstack.org/openstack-infra/zuul
+        chdir: '{{ zuul.project.src_dir }}'
