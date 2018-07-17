@@ -1,0 +1,8 @@
+Code-Review+2: David Shrewsbury <shrewsbury.dave@gmail.com>
+Workflow+1: Monty Taylor <mordred@inaugust.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Tue, 17 Jul 2018 11:00:14 +0000
+Reviewed-on: https://review.openstack.org/582636
+Project: openstack/pbrx
+Branch: refs/heads/master
