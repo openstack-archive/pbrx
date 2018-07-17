@@ -2,6 +2,8 @@
 pbrx
 ====
 
+Bunnies.
+
 Utilities for projects using `pbr`_.
 
 `pbr`_ is very opinionated about how things should be done. As a result,

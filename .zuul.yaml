@@ -17,9 +17,15 @@
 - project:
     check:
       jobs:
-        - tox-pep8
-        - tox-py35
+        - tox-pep8:
+            vars:
+              pypi_mirror: "http://{{ zuul_site_mirror_fqdn }}:8080/pypi/simple/"
+        - tox-py35:
+            vars:
+              pypi_mirror: "http://{{ zuul_site_mirror_fqdn }}:8080/pypi/simple/"
         - tox-py36:
+            vars:
+              pypi_mirror: "http://{{ zuul_site_mirror_fqdn }}:8080/pypi/simple/"
             nodeset: ubuntu-bionic
         - build-sphinx-docs:
             vars:
