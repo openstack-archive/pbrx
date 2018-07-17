@@ -13,6 +13,7 @@
       - openstack-infra/zuul
     vars:
       zuul_work_dir: src/git.openstack.org/openstack-infra/zuul
+      pypi_mirror: http://mirror.ca-ymq-1.vexxhost.openstack.org:8080/pypi/simple/
 
 - project:
     check:
