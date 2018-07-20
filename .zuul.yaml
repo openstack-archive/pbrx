@@ -15,15 +15,15 @@
       zuul_work_dir: src/git.openstack.org/openstack-infra/zuul
 
 - project:
+    templates:
+      - docs-on-readthedocs
+      - publish-to-pypi-python3
     check:
       jobs:
         - tox-pep8
         - tox-py35
         - tox-py36:
             nodeset: ubuntu-bionic
-        - build-sphinx-docs:
-            vars:
-              sphinx_python: python3
         - pbrx-build-zuul-containers
     gate:
       jobs:
@@ -31,7 +31,4 @@
         - tox-py35
         - tox-py36:
             nodeset: ubuntu-bionic
-        - build-sphinx-docs:
-            vars:
-              sphinx_python: python3
         - pbrx-build-zuul-containers
