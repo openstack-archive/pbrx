@@ -7,3 +7,4 @@ Users guide of pbrx.
 .. toctree::
 
   siblings
+  images
