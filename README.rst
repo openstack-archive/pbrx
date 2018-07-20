@@ -32,4 +32,12 @@ install-siblings
   replace the released version. This is done in such a way that any given
   ``constraints`` will be honored and not get messed up by transitive depends.
 
+build-images
+  Builds container images from a project's source tree. The ``python:alpine``
+  base image is used, and dependencies are taken from ``bindep.txt`` for
+  distro requirements and ``requirements.txt`` for python requirements. A
+  base image is made for the project itself, and then an additional image
+  based on the base image for every entry in ``entry_points.console_scripts``
+  in the ``setup.cfg`` file.
+
 .. _pbr: https://docs.openstack.org/pbr/latest/
