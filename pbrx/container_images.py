@@ -62,7 +62,8 @@ class ContainerContext(object):
                 host=os.path.expanduser('~/.config/pip/pip.conf'),
                 guest='/root/.config/pip/pip.conf'))
         self.run_id = self.create()
-        self._cont = sh.docker.bake("exec", self.run_id, "sh", "-c")
+        self._cont = sh.docker.bake("exec", self.run_id, "sh", "-c",
+                                    _truncate_exc=False)
 
     def create(self):
         vargs = [
