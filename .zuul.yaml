@@ -18,6 +18,8 @@
     templates:
       - docs-on-readthedocs
       - publish-to-pypi-python3
+    vars:
+      rtd_webhook_id: '42240'
     check:
       jobs:
         - tox-pep8
