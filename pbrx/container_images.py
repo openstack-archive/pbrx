@@ -12,7 +12,11 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import configparser
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
 import contextlib
 import logging
 import os
