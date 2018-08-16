@@ -314,3 +314,22 @@ def build(args):
             ) as cont:
                 cont.run(
                     "chown -R {uid} /root/.cache/pip".format(uid=os.getuid()))
+
+
+def push(args):
+    '''Push any built images to the registry.
+
+    The images built by pbrx's build-image command should already be named
+    with a prefix (the repository name to push to). It is expected that
+    we are already logged in to the registry as the user that owns the
+    repository.
+    '''
+    info = ProjectInfo()
+
+    unprefixed_image_names = info.scripts.copy()
+    unprefixed_image_names.add(info.base_container)
+
+    for image in unprefixed_image_names:
+        image = "/".join([args.prefix, image])
+        log.info("Pushing {image}".format(image=image))
+        sh.docker.push(image)

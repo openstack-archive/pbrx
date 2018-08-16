@@ -115,6 +115,16 @@ def main():
             " http://dl-cdn.alpinelinux.org/alpine"),
     )
 
+    cmd_push = subparsers.add_parser(
+        "push-images", help="push project container images to a repository"
+    )
+    cmd_push.set_defaults(func=container_images.push)
+    cmd_push.add_argument(
+        "--prefix",
+        help="Organization prefix container images will be published to",
+        required=True
+    )
+
     args = parser.parse_args()
     setup_logging(args.log_config, args.debug)
 

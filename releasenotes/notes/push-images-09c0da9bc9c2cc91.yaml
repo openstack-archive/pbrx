@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Added new push-images command to push any images built by the build-images
+    command.
