@@ -65,7 +65,7 @@ class ContainerContext(object):
             self._volumes.append('{host}:{guest}'.format(
                 host=os.path.expanduser('~/.config/pip/pip.conf'),
                 guest='/root/.config/pip/pip.conf'))
-        self.run_id = self.create()
+        self.create()
         self._cont = sh.docker.bake("exec", self.run_id, "sh", "-c",
                                     _truncate_exc=False)
 
@@ -86,7 +86,8 @@ class ContainerContext(object):
         vargs.append("sh")
 
         container_id = sh.docker(*vargs).strip()
-        return sh.docker('start', container_id).strip()
+        self.run_id = sh.docker('start', container_id).strip()
+        log.debug("Started container %s", self.run_id)
 
     def run(self, command):
         log.debug("Running: %s", command)
@@ -94,27 +95,56 @@ class ContainerContext(object):
         log.debug(output)
         return output
 
-    def commit(self, tag, comment=None, prefix=None):
+    def commit(self, image, tag=None, comment=None):
+        '''Apply a commit to the current container.
+
+        A new local image based on the current container is created with
+        the commit (name format of "image:tag").
+
+        :param str image: The local image name to create. This should
+            include any prefix (e.g., username/repository) appropriate for
+            pushing to a registry. If the image already exists, it is
+            overwritten.
+        :param str tag: The tag to apply to the new repo. If not supplied,
+            the docker default "latest" is used.
+        :param str comment: A commit message to apply to the new repo.
+        '''
         commit_args = []
         if comment:
             commit_args.append("-c")
             commit_args.append(comment)
         commit_args.append(self.run_id)
-        commit_args.append(tag)
+        if image:
+            if tag:
+                image = ":".join([image, tag])
+            commit_args.append(image)
+        log.debug("Committing container %s to %s", self.run_id, image)
         sh.docker.commit(*commit_args)
-        if prefix:
-            sh.docker.tag(
-                tag, "{prefix}/{tag}".format(prefix=prefix, tag=tag)
-            )
 
 
 @contextlib.contextmanager
-def docker_container(base, tag=None, prefix=None, comment=None, volumes=None):
+def docker_container(base, image=None, prefix=None, comment=None, volumes=None):
+    '''Context manager to use for container runs.
+
+    This will start a new container, optionally commit it to a new local
+    image, and remove the container at exit.
+
+    :param str base: Name of base image to use for the container.
+    :param str image: Image name to use for the new local image. If not
+        supplied, no local image is created.
+    :param str prefix: Prefix to apply to the new local image name.
+    :param str comment: Commit message to use for the new local image.
+    :param list volumes: List of volumes to bind to the container.
+    '''
     container = ContainerContext(base, volumes)
     yield container
 
-    if tag:
-        container.commit(tag, prefix=prefix, comment=comment)
+    if image:
+        if prefix:
+            image = "/".join([prefix, image])
+        container.commit(image, comment=comment)
+
+    log.debug("Removing container %s", container.run_id)
     sh.docker.rm("-f", container.run_id)
 
 
@@ -124,7 +154,7 @@ def build(args):
 
     log.info("Building base python container")
     # Create base python container which has distro packages updated
-    with docker_container("python:alpine", tag="python-base") as cont:
+    with docker_container("python:alpine", image="python-base") as cont:
         if args.mirror:
             cont.run("sed -i 's,{old},{new}' /etc/apk/repositories".format(
                 old=ALPINE_MIRROR_BASE,
@@ -133,7 +163,7 @@ def build(args):
 
     log.info("Building bindep container")
     # Create bindep container
-    with docker_container("python-base", tag="bindep") as cont:
+    with docker_container("python-base", image="bindep") as cont:
         cont.run("pip install bindep")
 
     # Use bindep container to get list of packages needed in the final
@@ -197,6 +227,8 @@ def build(args):
 
                 # Install with all container-related extras so that we populate
                 # the wheel cache as needed.
+                # NOTE(Shrews): The non-prefixed container names are referenced
+                # in the extras section.
                 cont.run(
                     "pip install"
                     " $(echo /root/.cache/pip/*.whl)[{base},{scripts}]".format(
@@ -208,7 +240,7 @@ def build(args):
             log.info("Build base container")
             with docker_container(
                 "python-base",
-                tag=info.base_container,
+                image=info.base_container,
                 prefix=args.prefix,
                 volumes=[tmp_volume],
                 comment='ENTRYPOINT ["/usr/bin/dumb-init", "--"]',
@@ -253,9 +285,16 @@ def build(args):
                     log.info(
                         "Building container for {script}".format(
                             script=script))
+
+                    # We already have a base container built that we'll use
+                    # for the other images, but it may be prefixed.
+                    base = info.base_container
+                    if args.prefix:
+                        base = "/".join([args.prefix, base])
+
                     with docker_container(
-                        info.base_container,
-                        tag=script,
+                        base,
+                        image=script,
                         prefix=args.prefix,
                         volumes=[tmp_volume],
                         comment='CMD ["/usr/local/bin/{script}"]'.format(
