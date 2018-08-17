@@ -14,6 +14,11 @@
     vars:
       zuul_work_dir: src/git.openstack.org/openstack-infra/zuul
 
+- job:
+    name: pbrx-push-container-images
+    parent: pbrx-build-container-images
+    run: playbooks/container-images/push.yaml
+
 - project:
     templates:
       - docs-on-readthedocs

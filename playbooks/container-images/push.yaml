@@ -1,0 +1,7 @@
+- hosts: all
+  tasks:
+
+    - name: Push prefixed container images
+      command: 'pbrx --debug push-images --prefix={{ pbrx_prefix }}'
+      args:
+        chdir: '{{ zuul_work_dir|default(zuul.project.src_dir) }}'
