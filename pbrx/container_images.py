@@ -159,7 +159,6 @@ def build(args):
             cont.run("sed -i 's,{old},{new}' /etc/apk/repositories".format(
                 old=ALPINE_MIRROR_BASE,
                 new=args.mirror))
-        cont.run("apk update")
 
     log.info("Building bindep container")
     # Create bindep container
@@ -217,7 +216,7 @@ def build(args):
                 cont.run("chown -R $(whoami) /root/.cache/pip")
 
                 # Add the compile dependencies
-                cont.run("apk add {compile_packages} git".format(
+                cont.run("apk --no-cache add {compile_packages} git".format(
                     compile_packages=compile_packages))
 
                 # Build a wheel so that we have an install target.
@@ -247,7 +246,7 @@ def build(args):
             ) as cont:
                 try:
                     cont.run(
-                        "apk add {packages} dumb-init".format(
+                        "apk --no-cache add {packages} dumb-init".format(
                             packages=packages)
                     )
                     cont.run(
