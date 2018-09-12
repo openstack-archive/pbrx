@@ -22,7 +22,7 @@ for interp in python2 python3 ; do
     venv=venv-$interp
     rm -rf $venv
     virtualenv --python=$interp venv-$interp
-    # Install python-openstackclient's requirements with constraings
+    # Install python-openstackclient's requirements with constraints
     $venv/bin/pip install -c $OPENSTACK/requirements/upper-constraints.txt -r requirements.txt
     # Install python-openstackclient itself
     $venv/bin/pip install --no-deps -e .
