@@ -229,7 +229,11 @@ def build(args):
                 # Build a wheel so that we have an install target.
                 # pip install . in the container context with the mounted
                 # source dir gets ... exciting.
-                cont.run("python setup.py bdist_wheel -d /root/.cache/pip")
+                # We run sdist first to trigger code generation steps such
+                # as are found in zuul, since the sequencing otherwise
+                # happens in a way that makes wheel content copying unhappy.
+                cont.run(
+                    "python setup.py sdist bdist_wheel -d /root/.cache/pip")
 
                 # Install with all container-related extras so that we populate
                 # the wheel cache as needed.
