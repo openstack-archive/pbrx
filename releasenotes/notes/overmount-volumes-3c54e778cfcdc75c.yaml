@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Build the final image in such a way that a local source dir can be
+    passed as a volume to a docker run invocation and be picked up in the
+    container. This allows for faster local iteration without having to
+    do a full rebuild every time.
