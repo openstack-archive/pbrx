@@ -233,7 +233,8 @@ def build(args):
                 # as are found in zuul, since the sequencing otherwise
                 # happens in a way that makes wheel content copying unhappy.
                 cont.run(
-                    "python setup.py sdist bdist_wheel -d /root/.cache/pip")
+                    "python setup.py sdist -d /root/.cache/pip"
+                    " bdist_wheel -d /root/.cache/pip")
 
                 # Install with all container-related extras so that we populate
                 # the wheel cache as needed.
@@ -264,6 +265,13 @@ def build(args):
                         "pip install"
                         " $(echo /root/.cache/pip/*.whl)[{base}]".format(
                             base=info.base_container.replace('-', '_')))
+                    # Install main project from /usr/src as an editable install
+                    # so that it's possible to pass in an updated copy as a
+                    # volume.
+                    cont.run(
+                        "tar xvfz $(echo /root/.cache/pip/*.tar.gz)"
+                        " -C /usr/src --strip-components=1")
+                    cont.run("pip install -e /usr/src")
                     if args.mirror:
                         cont.run(
                             "sed -i 's,{old},{new}'"
