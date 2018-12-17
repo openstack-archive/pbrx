@@ -129,7 +129,12 @@ class ContainerContext(object):
 
 
 @contextlib.contextmanager
-def docker_container(base, image=None, prefix=None, comment=None, volumes=None):
+def docker_container(base,
+                     image=None,
+                     prefix=None,
+                     comment=None,
+                     volumes=None,
+                     tag=None):
     '''Context manager to use for container runs.
 
     This will start a new container, optionally commit it to a new local
@@ -148,7 +153,7 @@ def docker_container(base, image=None, prefix=None, comment=None, volumes=None):
     if image:
         if prefix:
             image = "/".join([prefix, image])
-        container.commit(image, comment=comment)
+        container.commit(image, comment=comment, tag=tag)
 
     log.debug("Removing container %s", container.run_id)
     sh.docker.rm("-f", container.run_id)
@@ -218,7 +223,9 @@ def build(args):
             # Make temporary container that installs all deps to build wheel
             # This container also needs git installed for pbr
             log.info("Build wheels in python-base container")
-            with docker_container("python-base", volumes=[tmp_volume]) as cont:
+            with docker_container("python-base",
+                                  volumes=[tmp_volume], tag=args.tag) as cont:
+
                 # Make sure wheel cache dir is owned by container user
                 cont.run("chown -R $(whoami) /root/.cache/pip")
 
@@ -254,6 +261,7 @@ def build(args):
                 prefix=args.prefix,
                 volumes=[tmp_volume],
                 comment='ENTRYPOINT ["/usr/bin/dumb-init", "--"]',
+                tag=args.tag,
             ) as cont:
                 try:
                     cont.run(
@@ -309,7 +317,7 @@ def build(args):
                         volumes=[tmp_volume],
                         comment='CMD ["/usr/local/bin/{script}"]'.format(
                             script=script
-                        ),
+                        ), tag=args.tag,
                     ) as cont:
                         cont.run(
                             "pip install"
@@ -321,6 +329,7 @@ def build(args):
             with docker_container(
                 "python-base",
                 volumes=[tmp_volume],
+                tag=args.tag
             ) as cont:
                 cont.run(
                     "chown -R {uid} /root/.cache/pip".format(uid=os.getuid()))
