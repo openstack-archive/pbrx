@@ -1,15 +1,11 @@
 - hosts: all
   tasks:
 
-    - name: Build prefexed container images
-      when: pbrx_prefix is defined
-      command: 'pbrx --debug build-images --prefix={{ pbrx_prefix }}'
-      args:
-        chdir: '{{ zuul_work_dir|default(zuul.project.src_dir) }}'
-
-    - name: Build unprefixed zuul container images
-      when: pbrx_prefix is not defined
-      command: pbrx --debug build-images
+    - name: Build container image
+      command: |
+        pbrx --debug build-images \
+        {{ pbrx_prefix is defined | ternary('--prefix=' + pbrx_prefix, '') }} \
+        {{ pbrx_tag is defined | ternary('--tag=' + pbrx_tag, '') }}
       args:
         chdir: '{{ zuul_work_dir|default(zuul.project.src_dir) }}'
 

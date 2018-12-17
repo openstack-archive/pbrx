@@ -5,6 +5,8 @@
       - openstack/pbrx
     pre-run: playbooks/container-images/pre.yaml
     run: playbooks/container-images/run.yaml
+    vars:
+      pbrx_tag: "{{ zuul.build }}"
 
 - job:
     name: pbrx-build-zuul-containers

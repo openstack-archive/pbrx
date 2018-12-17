@@ -114,6 +114,10 @@ def main():
             "Base url for an alpine mirror to use. Will be used to replace"
             " http://dl-cdn.alpinelinux.org/alpine"),
     )
+    cmd_images.add_argument(
+        "--tag",
+        help="Tag to append to the image to pin versions",
+    )
 
     cmd_push = subparsers.add_parser(
         "push-images", help="push project container images to a repository"
@@ -124,7 +128,6 @@ def main():
         help="Organization prefix container images will be published to",
         required=True
     )
-
     args = parser.parse_args()
     setup_logging(args.log_config, args.debug)
 
