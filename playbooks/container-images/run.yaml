@@ -3,7 +3,9 @@
 
     - name: Build prefexed container images
       when: pbrx_prefix is defined
-      command: 'pbrx --debug build-images --prefix={{ pbrx_prefix }}'
+      command: |
+        pbrx --debug build-images --prefix={{ pbrx_prefix }} \
+        {% if pbrx_tag is defined -%}--tag={{ pbrx_tag }}{% endif %}
       args:
         chdir: '{{ zuul_work_dir|default(zuul.project.src_dir) }}'
 
