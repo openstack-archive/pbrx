@@ -1,6 +1,0 @@
-[run]
-branch = True
-source = pbrx
-
-[report]
-ignore_errors = True

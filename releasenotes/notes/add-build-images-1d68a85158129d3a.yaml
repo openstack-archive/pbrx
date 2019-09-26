@@ -1,5 +1,0 @@
----
-features:
-  - |
-    Add support for building per-process container images for each console
-    script entry point defined.
